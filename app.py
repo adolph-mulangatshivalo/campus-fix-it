@@ -35,7 +35,9 @@ def get_db_connection():
             user=app.config['DB_USER'],
             password=app.config['DB_PASSWORD'],
             database=app.config['DB_NAME'],
-            port=app.config['DB_PORT']
+            port=app.config['DB_PORT'],
+            ssl_verify_cert=True,
+            ssl_verify_identity=True
         )
         return connection
     except Error as e:
