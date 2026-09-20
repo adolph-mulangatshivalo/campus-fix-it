@@ -104,10 +104,11 @@
     <script type="module">
         import { auth, db } from '/static/js/firebase-config.js';
         import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         
         let unsubscribeReports = null;
 
-        auth.onAuthStateChanged(async (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 // Get worker's name
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -185,10 +186,8 @@
                                     Error loading tasks: ${error.message}
                                 </td>
                             </tr>`;
-                    });
-                } catch(error) {
-                    console.error("Error setting up listener: ", error);
-                }
+                    }
+            }
             }
         });
     </script>
