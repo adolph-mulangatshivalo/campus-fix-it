@@ -100,6 +100,15 @@
         // Update the theme globally
         document.body.className = 'theme-' + role;
         
+        // Update theme color meta tag for mobile overscroll
+        let themeColor = '#FFD500';
+        if (role === 'admin') themeColor = '#3B82F6';
+        else if (role === 'worker') themeColor = '#22C55E';
+        let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (metaThemeColor) {
+            metaThemeColor.content = themeColor;
+        }
+        
         // Update hidden input
         document.getElementById('login_role').value = role;
         
