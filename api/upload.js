@@ -28,7 +28,8 @@ module.exports = async function handler(req, res) {
     const data = await response.json();
     
     if (data.success) {
-      return res.status(200).json({ url: data.data.url });
+      // Return the display_url which is optimized by ImgBB for fast web loading
+      return res.status(200).json({ url: data.data.display_url });
     } else {
       console.error("ImgBB API Error:", data.error);
       return res.status(500).json({ error: data.error.message || 'ImgBB upload failed' });
