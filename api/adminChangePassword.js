@@ -31,7 +31,8 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { uid, newPassword } = req.body;
+  const body = req.body || {};
+  const { uid, newPassword } = body;
 
   if (!uid || !newPassword) {
     return res.status(400).json({ error: 'Missing required fields' });

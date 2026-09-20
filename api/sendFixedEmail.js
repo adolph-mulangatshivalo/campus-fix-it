@@ -32,7 +32,8 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { reportId } = req.body;
+  const body = req.body || {};
+  const { reportId } = body;
 
   if (!reportId) {
     return res.status(400).json({ error: 'Missing required field: reportId' });
