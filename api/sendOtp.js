@@ -49,12 +49,16 @@ module.exports = async function handler(req, res) {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 2 * 60000); // 2 minutes from now
 
-    // 2. Clean up any existing OTPs for this email so they disappear
+    // 2. Global Garbage Collection: Clean up ALL expired OTPs in the entire database
     try {
-        const oldSnapshot = await db.collection("password_resets").where("email", "==", email).get();
-        if (!oldSnapshot.empty) {
+        const now = new Date();
+        const expiredSnapshot = await db.collection("password_resets")
+            .where("expiresAt", "<", now)
+            .get();
+            
+        if (!expiredSnapshot.empty) {
             const batch = db.batch();
-            oldSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+            expiredSnapshot.docs.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
         }
     } catch(e) {
