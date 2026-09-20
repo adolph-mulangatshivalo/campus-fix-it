@@ -1,12 +1,13 @@
-const admin = require('firebase-admin');
+const { initializeApp, getApps, cert } = require('firebase-admin/app');
+const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 
 // Initialize Firebase Admin if not already initialized
-if (!admin.apps.length) {
+if (getApps().length === 0) {
   try {
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount)
+        initializeApp({
+          credential: cert(serviceAccount)
         });
     }
   } catch (error) {
@@ -36,12 +37,12 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required field: email' });
   }
 
-  if (!admin.apps.length) {
+  if (getApps().length === 0) {
     return res.status(500).json({ error: 'Server misconfiguration: FIREBASE_SERVICE_ACCOUNT is missing' });
   }
 
   try {
-    const db = admin.firestore();
+    const db = getFirestore();
 
     // 1. Generate 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -51,8 +52,8 @@ module.exports = async function handler(req, res) {
     await db.collection("password_resets").add({
         email: email,
         otp: otpCode,
-        expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
+        expiresAt: Timestamp.fromDate(expiresAt),
+        createdAt: FieldValue.serverTimestamp()
     });
 
     // 3. Send Email using EmailJS REST API

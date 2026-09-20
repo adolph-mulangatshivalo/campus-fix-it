@@ -1,12 +1,14 @@
-const admin = require('firebase-admin');
+const { initializeApp, getApps, cert } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
 
 // Initialize Firebase Admin if not already initialized
-if (!admin.apps.length) {
+if (getApps().length === 0) {
   try {
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount)
+        initializeApp({
+          credential: cert(serviceAccount)
         });
     }
   } catch (error) {
@@ -36,13 +38,13 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required field: reportId' });
   }
 
-  if (!admin.apps.length) {
+  if (getApps().length === 0) {
     return res.status(500).json({ error: 'Server misconfiguration: FIREBASE_SERVICE_ACCOUNT is missing' });
   }
 
   try {
-    const db = admin.firestore();
-    const auth = admin.auth();
+    const db = getFirestore();
+    const auth = getAuth();
 
     // 1. Get Report Details
     const reportDoc = await db.collection('reports').doc(reportId).get();
