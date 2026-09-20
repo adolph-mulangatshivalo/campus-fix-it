@@ -90,9 +90,9 @@
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
                         
-                        // Max dimensions
-                        const MAX_WIDTH = 1200;
-                        const MAX_HEIGHT = 1200;
+                        // Max dimensions for fast loading (under 500kb)
+                        const MAX_WIDTH = 800;
+                        const MAX_HEIGHT = 800;
                         let width = img.width;
                         let height = img.height;
 
@@ -114,8 +114,8 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
                         
-                        // Compress to WebP at 70% quality
-                        const dataUrl = canvas.toDataURL('image/webp', 0.7);
+                        // Compress to WebP at 60% quality
+                        const dataUrl = canvas.toDataURL('image/webp', 0.6);
                         // Extract base64 part
                         const base64Data = dataUrl.split(',')[1];
                         resolve(base64Data);
