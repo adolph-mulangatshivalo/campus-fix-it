@@ -49,3 +49,4 @@ To run this project locally, you will need Node.js and the Vercel CLI installed.
 ## 🔒 Security Notes
 *   **Firestore Rules:** The database is locked down. Users can only read/write their own profiles and reports. Password reset tokens are completely blocked from frontend access and can only be managed by the secure Admin SDK in the Vercel backend.
 *   **Instant Redirects:** The app uses a `vercel.json` configuration for instant, server-side route protection and redirection.
+
