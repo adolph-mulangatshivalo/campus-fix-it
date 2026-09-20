@@ -45,9 +45,9 @@ module.exports = async function handler(req, res) {
   try {
     const db = getFirestore();
 
-    // 1. Generate 6-digit OTP
+    // 1. Generate a 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60000); // 10 minutes from now
+    const expiresAt = new Date(Date.now() + 2 * 60000); // 2 minutes from now
 
     // 2. Save to Firestore securely via Admin SDK (bypasses security rules)
     await db.collection("password_resets").add({
