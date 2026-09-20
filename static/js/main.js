@@ -76,14 +76,4 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Service Worker unregistration failed: ', err);
         });
     }
-
-    // Route Prefetching: silently fetch pages linked on the current page
-    setTimeout(() => {
-        const links = document.querySelectorAll('a[href^="/"]');
-        links.forEach(link => {
-            if (link.href !== window.location.href) {
-                fetch(link.href, { mode: 'no-cors', cache: 'force-cache' }).catch(() => {});
-            }
-        });
-    }, 1000);
 });
