@@ -11,15 +11,18 @@ document.addEventListener('DOMContentLoaded', () => {
             let role = 'student';
             let fullName = user.displayName;
             try {
-                const docSnap = await getDoc(doc(db, 'users', user.uid));
-                if (docSnap.exists()) {
+                // Add a 3-second timeout so Safari networking bugs don't permanently freeze the app
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000));
+                const docSnap = await Promise.race([getDoc(doc(db, 'users', user.uid)), timeoutPromise]);
+                
+                if (docSnap && docSnap.exists()) {
                     role = docSnap.data().role || 'student';
                     if (docSnap.data().full_name) {
                         fullName = docSnap.data().full_name;
                     }
                 }
             } catch (e) {
-                console.error("Error fetching user role", e);
+                console.error("Error or timeout fetching user role, defaulting to student", e);
             }
 
             document.body.className = `theme-${role}`;
@@ -63,12 +66,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Register Service Worker for App Shell caching
+    // Kill Service Worker to prevent Safari PWA hanging bugs
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js').catch(err => {
-                console.error('SW registration failed: ', err);
-            });
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+                registration.unregister();
+            }
+        }).catch(function(err) {
+            console.log('Service Worker unregistration failed: ', err);
         });
     }
 
