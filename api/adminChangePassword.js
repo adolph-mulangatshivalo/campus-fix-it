@@ -1,18 +1,21 @@
-const { initializeApp, getApps, cert } = require('firebase-admin/app');
-const { getAuth } = require('firebase-admin/auth');
+let appModule, authModule;
+let initializationError = null;
 
-// Initialize Firebase Admin if not already initialized
-if (getApps().length === 0) {
-  try {
+try {
+  appModule = require('firebase-admin/app');
+  authModule = require('firebase-admin/auth');
+
+  if (appModule.getApps().length === 0) {
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-        initializeApp({
-          credential: cert(serviceAccount)
+        appModule.initializeApp({
+          credential: appModule.cert(serviceAccount)
         });
     }
-  } catch (error) {
-    console.error("Firebase Admin Initialization Error:", error);
   }
+} catch (error) {
+  initializationError = error.message;
+  console.error("Initialization Error:", error);
 }
 
 module.exports = async function handler(req, res) {
@@ -38,12 +41,16 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  if (getApps().length === 0) {
+  if (initializationError) {
+    return res.status(500).json({ error: `Module Load Error: ${initializationError}` });
+  }
+
+  if (appModule.getApps().length === 0) {
     return res.status(500).json({ error: 'Server misconfiguration: FIREBASE_SERVICE_ACCOUNT is missing' });
   }
 
   try {
-    const auth = getAuth();
+    const auth = authModule.getAuth();
 
     // Force update the user's password using the Admin SDK
     await auth.updateUser(uid, {

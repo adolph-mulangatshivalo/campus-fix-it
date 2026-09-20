@@ -1,19 +1,22 @@
-const { initializeApp, getApps, cert } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
-const { getAuth } = require('firebase-admin/auth');
+let appModule, firestoreModule, authModule;
+let initializationError = null;
 
-// Initialize Firebase Admin if not already initialized
-if (getApps().length === 0) {
-  try {
+try {
+  appModule = require('firebase-admin/app');
+  firestoreModule = require('firebase-admin/firestore');
+  authModule = require('firebase-admin/auth');
+
+  if (appModule.getApps().length === 0) {
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-        initializeApp({
-          credential: cert(serviceAccount)
+        appModule.initializeApp({
+          credential: appModule.cert(serviceAccount)
         });
     }
-  } catch (error) {
-    console.error("Firebase Admin Initialization Error:", error);
   }
+} catch (error) {
+  initializationError = error.message;
+  console.error("Initialization Error:", error);
 }
 
 module.exports = async function handler(req, res) {
@@ -39,13 +42,17 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  if (getApps().length === 0) {
+  if (initializationError) {
+    return res.status(500).json({ error: `Module Load Error: ${initializationError}` });
+  }
+
+  if (appModule.getApps().length === 0) {
     return res.status(500).json({ error: 'Server misconfiguration: FIREBASE_SERVICE_ACCOUNT is missing or invalid' });
   }
 
   try {
-    const db = getFirestore();
-    const auth = getAuth();
+    const db = firestoreModule.getFirestore();
+    const auth = authModule.getAuth();
 
     // 1. Verify OTP in Firestore
     const resetsRef = db.collection('password_resets');
