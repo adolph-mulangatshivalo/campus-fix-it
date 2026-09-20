@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Fix-It</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+</head>
+<body class="theme-admin">
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+            Campus Fix-It
+        </a>
+        <div class="navbar-links" id="nav-links"></div>
+    </nav>
+
+    <!-- Flash Messages container -->
+    <div class="flash-messages" id="flash-messages"></div>
+                
+            
+        
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="container">
+        
+<div class="responsive-header">
+    <div>
+        <h2>Admin Dashboard</h2>
+        <p style="color: var(--text-muted);">Manage all campus maintenance reports</p>
+    </div>
+    <div>
+        <a href="/admin/manage_staff.html" class="btn btn-blue" id="manage-staff-btn" style="padding: 0.6rem 1.2rem; font-size: 0.95rem; display: none;">Manage Staff</a>
+    </div>
+</div>
+
+<div class="dashboard-stats">
+    <div class="stat-card" style="background: #FFF; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow);">
+        <h3>Total Reports</h3>
+        <div class="stat-value" id="total-reports"><div class="skeleton skeleton-text" style="height: 3.5rem; width: 80px; margin: 0 auto;"></div></div>
+    </div>
+    <div class="stat-card" style="background: #DBEAFE; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow);">
+        <h3>New Submitted</h3>
+        <div class="stat-value" id="new-reports" style="color: #4338CA;"><div class="skeleton skeleton-text" style="height: 3.5rem; width: 80px; margin: 0 auto;"></div></div>
+    </div>
+    <div class="stat-card" style="background: #FEF08A; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow);">
+        <h3>In Progress</h3>
+        <div class="stat-value" id="in-progress-reports" style="color: #B45309;"><div class="skeleton skeleton-text" style="height: 3.5rem; width: 80px; margin: 0 auto;"></div></div>
+    </div>
+    <div class="stat-card" style="background: #BBF7D0; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow);">
+        <h3>Fixed</h3>
+        <div class="stat-value" id="fixed-reports" style="color: #065F46;"><div class="skeleton skeleton-text" style="height: 3.5rem; width: 80px; margin: 0 auto;"></div></div>
+    </div>
+</div>
+
+<div class="table-container" style="padding: 1.5rem; margin-bottom: 2rem;">
+    <form id="filter-form" class="responsive-flex-form">
+        <div style="flex: 1;">
+            <label for="search" class="form-label">Search</label>
+            <input type="text" id="search" name="search" class="form-control" placeholder="Search by title or location...">
+        </div>
+        <div>
+            <label for="category" class="form-label">Category</label>
+            <select id="category" name="category" class="form-control">
+                <option value="">All Categories</option>
+                <option value="Plumbing">Plumbing</option>
+                <option value="Electrical">Electrical</option>
+                <option value="IT">IT</option>
+                <option value="Cleaning">Cleaning</option>
+                <option value="Structural">Structural</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <div>
+            <label for="status" class="form-label">Status</label>
+            <select id="status" name="status" class="form-control">
+                <option value="">All Statuses</option>
+                <option value="Submitted">Submitted</option>
+                <option value="Under Review">Under Review</option>
+                <option value="Assigned">Assigned</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Fixed">Fixed</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+        </div>
+        <div style="display: flex; align-items: flex-end; gap: 0.5rem; padding-bottom: 2px;">
+            <button type="submit" class="btn btn-blue" style="margin: 0; height: 54px; display: flex; align-items: center; justify-content: center; padding: 0 2rem;">Filter</button>
+            <button type="button" id="clear-btn" class="btn btn-red" style="margin: 0; height: 54px; display: flex; align-items: center; justify-content: center; padding: 0 2rem;">Clear</button>
+        </div>
+    </form>
+</div>
+
+<div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; padding: 0 1rem;">
+    <h3 style="margin: 0; text-transform: uppercase;">Manage Reports</h3>
+    <button type="button" id="bulk-delete-btn" class="btn btn-red" style="display: none; padding: 0.5rem 1rem; font-size: 0.9rem;">Delete Selected (0)</button>
+</div>
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all" style="cursor: pointer; width: 16px; height: 16px;"></th>
+                <th>ID</th>
+                <th>Title & Category</th>
+                <th>Location</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="reports-table-body">
+            <tr>
+                <td data-label="Select"><div class="skeleton skeleton-text" style="width: 16px; height: 16px;"></div></td>
+                <td data-label="ID"><div class="skeleton skeleton-text" style="width: 60px;"></div></td>
+                <td data-label="Title & Category"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text" style="width: 60%;"></div></td>
+                <td data-label="Location"><div class="skeleton skeleton-text" style="width: 80%;"></div></td>
+                <td data-label="Date"><div class="skeleton skeleton-text" style="width: 100px;"></div></td>
+                <td data-label="Status"><div class="skeleton skeleton-text" style="width: 80px; height: 1.5rem; border-radius: 20px;"></div></td>
+                <td data-label="Action"><div class="skeleton skeleton-text" style="height: 2.2rem; width: 140px;"></div></td>
+            </tr>
+            <tr>
+                <td data-label="Select"><div class="skeleton skeleton-text" style="width: 16px; height: 16px;"></div></td>
+                <td data-label="ID"><div class="skeleton skeleton-text" style="width: 60px;"></div></td>
+                <td data-label="Title & Category"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text" style="width: 60%;"></div></td>
+                <td data-label="Location"><div class="skeleton skeleton-text" style="width: 80%;"></div></td>
+                <td data-label="Date"><div class="skeleton skeleton-text" style="width: 100px;"></div></td>
+                <td data-label="Status"><div class="skeleton skeleton-text" style="width: 80px; height: 1.5rem; border-radius: 20px;"></div></td>
+                <td data-label="Action"><div class="skeleton skeleton-text" style="height: 2.2rem; width: 140px;"></div></td>
+            </tr>
+            <tr>
+                <td data-label="Select"><div class="skeleton skeleton-text" style="width: 16px; height: 16px;"></div></td>
+                <td data-label="ID"><div class="skeleton skeleton-text" style="width: 60px;"></div></td>
+                <td data-label="Title & Category"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text" style="width: 60%;"></div></td>
+                <td data-label="Location"><div class="skeleton skeleton-text" style="width: 80%;"></div></td>
+                <td data-label="Date"><div class="skeleton skeleton-text" style="width: 100px;"></div></td>
+                <td data-label="Status"><div class="skeleton skeleton-text" style="width: 80px; height: 1.5rem; border-radius: 20px;"></div></td>
+                <td data-label="Action"><div class="skeleton skeleton-text" style="height: 2.2rem; width: 140px;"></div></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+    </main>
+
+    <!-- Firebase Serverless Scripts -->
+    <script type="module" src="/static/js/firebase-config.js"></script>
+    <script type="module" src="/static/js/main.js"></script>
+    <script type="module">
+        import { auth, db } from '/static/js/firebase-config.js';
+        import { collection, query, onSnapshot, doc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        
+        onAuthStateChanged(auth, user => {
+            if (user && user.email === 'sadm111@admin.campus-fix-it.com') {
+                const btn = document.getElementById('manage-staff-btn');
+                if (btn) btn.style.display = 'inline-block';
+            }
+        });
+        
+        let allReports = [];
+        
+        let unsubscribeReports = null;
+        
+        function loadReports() {
+            try {
+                const q = query(collection(db, "reports"));
+                unsubscribeReports = onSnapshot(q, (querySnapshot) => {
+                    let total = 0;
+                    let newRep = 0;
+                    let inProgress = 0;
+                    let fixed = 0;
+                    
+                    allReports = [];
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        allReports.push({ id: doc.id, ...data });
+                        total++;
+                        const status = data.status || '';
+                        if (status === 'Submitted') newRep++;
+                        if (status === 'In Progress' || status === 'Assigned' || status === 'Under Review') inProgress++;
+                        if (status === 'Fixed') fixed++;
+                    });
+                    
+                    document.getElementById('total-reports').textContent = total;
+                    document.getElementById('new-reports').textContent = newRep;
+                    document.getElementById('in-progress-reports').textContent = inProgress;
+                    document.getElementById('fixed-reports').textContent = fixed;
+                    
+                    // Sort descending by created_at
+                    allReports.sort((a, b) => {
+                        const timeA = a.created_at ? a.created_at.toMillis() : 0;
+                        const timeB = b.created_at ? b.created_at.toMillis() : 0;
+                        return timeB - timeA;
+                    });
+                    
+                    // Re-apply filters if any
+                    const search = document.getElementById('search').value.toLowerCase();
+                    const category = document.getElementById('category').value;
+                    const statusVal = document.getElementById('status').value;
+                    
+                    let filtered = allReports;
+                    if (search || category || statusVal) {
+                        filtered = allReports.filter(report => {
+                            const rTitle = report.title ? report.title.toLowerCase() : '';
+                            const rLoc = report.location ? report.location.toLowerCase() : '';
+                            const matchSearch = rTitle.includes(search) || rLoc.includes(search);
+                            const matchCategory = category ? report.category === category : true;
+                            const matchStatus = statusVal ? report.status === statusVal : true;
+                            return matchSearch && matchCategory && matchStatus;
+                        });
+                    }
+                    
+                    renderTable(filtered);
+                }, (error) => {
+                    console.error("Error fetching reports: ", error);
+                    document.getElementById('reports-table-body').innerHTML = `
+                        <tr><td colspan="7" style="text-align: center; color: red; padding: 3rem;">Error loading reports: ${error.message}</td></tr>`;
+                });
+            } catch(error) {
+                console.error("Error setting up listener: ", error);
+            }
+        }
+        
+        function renderTable(reports) {
+            const tbody = document.getElementById('reports-table-body');
+            if (reports.length === 0) {
+                tbody.innerHTML = `
+                <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">No reports found.</td></tr>`;
+                updateBulkDeleteBtn();
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            reports.forEach(report => {
+                const dateObj = report.created_at ? report.created_at.toDate() : new Date();
+                const dateStr = dateObj.toLocaleDateString();
+                
+                const st = report.status || 'Submitted';
+                const badgeClass = st.toLowerCase().replace(' ', '-');
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td data-label="Select" style="text-align: center;">
+                        <input type="checkbox" class="report-checkbox" value="${report.id}" style="cursor: pointer; width: 16px; height: 16px;">
+                    </td>
+                    <td data-label="ID"><strong>#${report.id.substring(0, 6).toUpperCase()}</strong></td>
+                    <td data-label="Title & Category">
+                        <div style="font-weight: 600;">${report.title}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted);">${report.category}</div>
+                    </td>
+                    <td data-label="Location">${report.location}</td>
+                    <td data-label="Date">${dateStr}</td>
+                    <td data-label="Status">
+                        <span class="badge badge-${badgeClass}">${st}</span>
+                    </td>
+                    <td data-label="Action">
+                        <a href="/admin/manage_report.html?id=${report.id}" class="action-btn btn-blue">Manage</a>
+                        <button type="button" class="action-btn btn-red del-report-btn" data-id="${report.id}" style="margin-left: 0.5rem;">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            attachTableListeners();
+        }
+        
+        function updateBulkDeleteBtn() {
+            const checked = document.querySelectorAll('.report-checkbox:checked').length;
+            const btn = document.getElementById('bulk-delete-btn');
+            if (checked > 0) {
+                btn.style.display = 'block';
+                btn.textContent = `Delete Selected (${checked})`;
+            } else {
+                btn.style.display = 'none';
+            }
+            
+            const selectAll = document.getElementById('select-all');
+            const total = document.querySelectorAll('.report-checkbox').length;
+            selectAll.checked = (total > 0 && checked === total);
+        }
+
+        function attachTableListeners() {
+            document.querySelectorAll('.report-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateBulkDeleteBtn);
+            });
+            
+            document.querySelectorAll('.del-report-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    if(confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+                        const id = e.target.getAttribute('data-id');
+                        const flash = document.getElementById('flash-messages');
+                        e.target.disabled = true;
+                        e.target.textContent = '...';
+                        try {
+                            await deleteDoc(doc(db, 'reports', id));
+                        } catch (err) {
+                            console.error(err);
+                            flash.innerHTML = `<div class="flash-message flash-danger">${err.message.replace(/Firebase:\s*/, '').replace(/\s*\(.*?\)\.?/, '')}</div>`;
+                            e.target.disabled = false;
+                            e.target.textContent = 'Delete';
+                        }
+                    }
+                });
+            });
+            
+            updateBulkDeleteBtn();
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadReports();
+            
+            const form = document.getElementById('filter-form');
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const search = document.getElementById('search').value.toLowerCase();
+                const category = document.getElementById('category').value;
+                const status = document.getElementById('status').value;
+                
+                const filtered = allReports.filter(report => {
+                    const rTitle = report.title ? report.title.toLowerCase() : '';
+                    const rLoc = report.location ? report.location.toLowerCase() : '';
+                    const matchSearch = rTitle.includes(search) || rLoc.includes(search);
+                    const matchCategory = category ? report.category === category : true;
+                    const matchStatus = status ? report.status === status : true;
+                    return matchSearch && matchCategory && matchStatus;
+                });
+                renderTable(filtered);
+            });
+            
+            document.getElementById('clear-btn').addEventListener('click', () => {
+                form.reset();
+                renderTable(allReports);
+            });
+            
+            document.getElementById('select-all').addEventListener('change', (e) => {
+                const checked = e.target.checked;
+                document.querySelectorAll('.report-checkbox').forEach(cb => {
+                    cb.checked = checked;
+                });
+                updateBulkDeleteBtn();
+            });
+            
+            document.getElementById('bulk-delete-btn').addEventListener('click', async (e) => {
+                const checkedBoxes = document.querySelectorAll('.report-checkbox:checked');
+                if (checkedBoxes.length === 0) return;
+                
+                if(confirm(`Are you sure you want to delete ${checkedBoxes.length} reports? This action cannot be undone.`)) {
+                    const flash = document.getElementById('flash-messages');
+                    const btn = e.target;
+                    btn.disabled = true;
+                    btn.textContent = 'Deleting...';
+                    
+                    try {
+                        const batch = writeBatch(db);
+                        checkedBoxes.forEach(cb => {
+                            batch.delete(doc(db, 'reports', cb.value));
+                        });
+                        await batch.commit();
+                        document.querySelectorAll('.report-checkbox').forEach(cb => cb.checked = false);
+                        document.getElementById('select-all').checked = false;
+                        updateBulkDeleteBtn();
+                        btn.disabled = false;
+                        btn.textContent = `Delete Selected (0)`;
+                    } catch (err) {
+                        console.error(err);
+                        flash.innerHTML = `<div class="flash-message flash-danger">${err.message.replace(/Firebase:\s*/, '').replace(/\s*\(.*?\)\.?/, '')}</div>`;
+                        btn.disabled = false;
+                        btn.textContent = `Delete Selected (${checkedBoxes.length})`;
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

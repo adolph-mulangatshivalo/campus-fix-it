@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Fix-It</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+</head>
+<body class="theme-admin">
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+            Campus Fix-It
+        </a>
+        <div class="navbar-links" id="nav-links"></div>
+    </nav>
+
+    <!-- Flash Messages container -->
+    <div class="flash-messages" id="flash-messages"></div>
+
+
+    <main class="container">
+        
+<div style="margin-bottom: 1.5rem;">
+    <a href="/admin/dashboard.html" style="color: var(--text-muted); text-decoration: none;">&larr; Back to Admin Dashboard</a>
+</div>
+
+<div class="table-container" style="padding: 2rem;" id="report-container">
+    <div class="responsive-header" style="align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+            <div class="skeleton skeleton-text" style="height: 2.5rem; width: 300px; margin-bottom: 0.5rem;"></div>
+            <div class="skeleton skeleton-text" style="height: 1rem; width: 150px;"></div>
+        </div>
+        <div>
+            <div class="skeleton skeleton-text" style="height: 2rem; width: 120px; border-radius: 20px;"></div>
+        </div>
+    </div>
+    
+    <div class="responsive-split-grid" style="margin-top: 2rem;">
+        <div>
+            <h4 style="margin-bottom: 0.5rem; text-transform: uppercase; border-bottom: 3px solid #000; padding-bottom: 0.5rem;">Location & Instructions</h4>
+            <div class="skeleton" style="height: 150px; border: var(--border-width) solid var(--border-color); margin-bottom: 2rem; box-shadow: var(--neo-shadow);"></div>
+            <div class="skeleton skeleton-img"></div>
+        </div>
+        
+        <div>
+            <div class="skeleton" style="height: 250px; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow); margin-bottom: 2rem;"></div>
+            <div class="skeleton" style="height: 200px; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow);"></div>
+        </div>
+    </div>
+</div>
+
+    </main>
+
+    <!-- Firebase Serverless Scripts -->
+    <script type="module" src="/static/js/firebase-config.js"></script>
+    <script type="module" src="/static/js/main.js"></script>
+    <script type="module">
+        import { auth, db } from '/static/js/firebase-config.js';
+        import { doc, getDoc, updateDoc, collection, query, where, getDocs, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        let reportId = new URLSearchParams(window.location.search).get('id');
+        let currentReport = null;
+        
+        async function loadReport() {
+            const container = document.getElementById('report-container');
+            if (!reportId) {
+                container.innerHTML = `<div style="text-align: center; padding: 3rem; color: red;">No report ID provided.</div>`;
+                return;
+            }
+            
+            try {
+                const docSnap = await getDoc(doc(db, 'reports', reportId));
+                if (!docSnap.exists()) {
+                    container.innerHTML = `<div style="text-align: center; padding: 3rem; color: red;">Report not found.</div>`;
+                    return;
+                }
+                
+                currentReport = docSnap.data();
+                const dateObj = currentReport.created_at ? currentReport.created_at.toDate() : new Date();
+                
+                const st = currentReport.status || 'Submitted';
+                const badgeClass = st.toLowerCase().replace(' ', '-');
+                
+                // Fetch student details
+                let studentInfo = "Unknown Student";
+                if (currentReport.student_id) {
+                    const stuSnap = await getDoc(doc(db, 'users', currentReport.student_id));
+                    if (stuSnap.exists()) {
+                        const sData = stuSnap.data();
+                        studentInfo = `
+                            <div><strong>Submitted By:</strong> ${sData.full_name}</div>
+                            <div><strong>Student ID:</strong> ${sData.student_number || 'N/A'}</div>
+                            <div><strong>Email:</strong> <a href="mailto:${sData.email}" style="color: var(--primary); font-weight: bold;">${sData.email}</a></div>
+                        `;
+                    }
+                }
+                
+                // Fetch assigned worker details
+                let workerName = "Unassigned";
+                if (currentReport.assigned_worker_id) {
+                    const wSnap = await getDoc(doc(db, 'users', currentReport.assigned_worker_id));
+                    if (wSnap.exists()) workerName = wSnap.data().full_name;
+                }
+                
+                let imageHtml = '';
+                if (currentReport.image_url) {
+                    imageHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Attached Image</h4>
+                        <img src="${currentReport.image_url}" alt="Issue Photo" style="max-width: 100%; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow); margin-top: 1rem;">
+                    </div>`;
+                } else {
+                    imageHtml = `
+                    <div style="background: #E5E7EB; padding: 2rem; text-align: center; color: #000; font-weight: bold; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow); margin-top: 1rem; margin-bottom: 2rem;">
+                        No photo was attached to this report.
+                    </div>`;
+                }
+                
+                let notesHtml = '';
+                if (currentReport.notes && currentReport.notes.length > 0) {
+                    notesHtml = '<div style="display: flex; flex-direction: column; gap: 1.5rem;">';
+                    currentReport.notes.forEach(note => {
+                        const nDate = note.timestamp ? note.timestamp.toDate().toLocaleString() : '';
+                        notesHtml += `
+                        <div style="border-left: 4px solid var(--primary); padding-left: 1rem;">
+                            <div style="font-size: 0.85rem; font-weight: 700; color: #000;">${nDate}</div>
+                            <div style="font-weight: 800; font-size: 1rem; margin-top: 0.25rem;">
+                                Status changed to: <span class="badge badge-${(note.new_status || 'Submitted').toLowerCase().replace(' ', '-')}">${note.new_status}</span>
+                            </div>
+                            ${note.text ? `
+                            <div style="font-size: 0.95rem; font-weight: 500; color: #333; margin-top: 0.5rem; background: #FEF08A; padding: 0.5rem; border: 2px solid #000;">
+                                "${note.text}"
+                            </div>` : ''}
+                            <div style="font-size: 0.8rem; font-weight: 700; color: #000; margin-top: 0.5rem; text-align: right;">
+                                - ${note.author_name} (${note.author_role})
+                            </div>
+                        </div>`;
+                    });
+                    notesHtml += '</div>';
+                } else {
+                    notesHtml = '<p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">No updates have been made to this report yet.</p>';
+                }
+
+                container.innerHTML = `
+                    <div class="responsive-header" style="align-items: flex-start; margin-bottom: 1rem;">
+                        <div>
+                            <h2 style="margin-bottom: 0.5rem;">Report: ${currentReport.title}</h2>
+                            <div style="color: var(--text-muted); font-size: 0.9rem;">
+                                Category: <strong>${currentReport.category}</strong>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="badge badge-${badgeClass}" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                                Current Status: ${st}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="responsive-flex-form" style="border: var(--border-width) solid var(--border-color); background: #FFF; padding: 1rem; margin-bottom: 2rem; font-size: 0.9rem; box-shadow: var(--neo-shadow);">
+                        ${studentInfo}
+                        <div><strong>Date:</strong> ${dateObj.toLocaleString()}</div>
+                        <div style="background: var(--primary); color: #FFF; padding: 0.25rem 0.5rem; font-weight: bold;"><strong>Worker:</strong> ${workerName}</div>
+                    </div>
+                    
+                    <div class="responsive-split-grid">
+                        <div>
+                            <h4 style="margin-bottom: 0.5rem; text-transform: uppercase; border-bottom: 3px solid #000; padding-bottom: 0.5rem;">Issue Description</h4>
+                            <p style="background: #FFF; border: var(--border-width) solid var(--border-color); padding: 1.5rem; margin-bottom: 2rem; box-shadow: var(--neo-shadow); font-weight: 500; white-space: pre-wrap;">${currentReport.description}</p>
+                            
+                            <h4 style="margin-bottom: 0.5rem; text-transform: uppercase; border-bottom: 3px solid #000; padding-bottom: 0.5rem;">Location</h4>
+                            <p style="margin-bottom: 2rem; font-weight: 500;">${currentReport.location}</p>
+                            
+                            ${imageHtml}
+                        </div>
+                        
+                        <div>
+                            <div style="background: #FFF; padding: 1.5rem; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow); margin-bottom: 2rem;">
+                                <h4 style="margin-bottom: 1rem; text-transform: uppercase; border-bottom: 3px solid #000; padding-bottom: 0.5rem;">Assign Worker</h4>
+                                <form id="assign-form">
+                                    <div class="form-group">
+                                        <label for="worker_id" class="form-label">Select Maintenance Worker</label>
+                                        <select id="worker_id" name="worker_id" class="form-control" required>
+                                            <option value="">-- Loading Workers --</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-dark" style="width: 100%;">Assign Worker</button>
+                                </form>
+                            </div>
+
+                            <div style="background: #FFF; padding: 1.5rem; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow); margin-bottom: 2rem;">
+                                <h4 style="margin-bottom: 1rem; text-transform: uppercase; border-bottom: 3px solid #000; padding-bottom: 0.5rem;">Update Status</h4>
+                                <form id="status-form">
+                                    <div class="form-group">
+                                        <label for="status" class="form-label">New Status</label>
+                                        <select id="status" name="status" class="form-control" required>
+                                            <option value="Submitted">Submitted</option>
+                                            <option value="Under Review">Under Review</option>
+                                            <option value="Assigned">Assigned</option>
+                                            <option value="In Progress">In Progress</option>
+                                            <option value="Fixed">Fixed</option>
+                                            <option value="Rejected">Rejected</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="comment" class="form-label">Add Comment (Visible to student)</label>
+                                        <textarea id="comment" name="comment" class="form-control" rows="3" placeholder="Provide an update for the student..."></textarea>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-green" style="width: 100%;">Save Update</button>
+                                </form>
+                            </div>
+                            
+                            <div style="background: #FFF; padding: 1.5rem; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow);">
+                                <h4 style="margin-bottom: 1.5rem; text-transform: uppercase; border-bottom: 3px solid #000; padding-bottom: 0.5rem;">Update History</h4>
+                                ${notesHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Initialize selects
+                document.getElementById('status').value = st;
+                
+                // Load workers
+                const wQuery = query(collection(db, 'users'), where('role', 'in', ['worker', 'Worker', 'WORKER']));
+                const wSnap = await getDocs(wQuery);
+                const wSelect = document.getElementById('worker_id');
+                wSelect.innerHTML = '<option value="">-- Select Worker --</option>';
+                wSnap.forEach(wDoc => {
+                    const data = wDoc.data();
+                    const sel = (currentReport.assigned_worker_id === wDoc.id) ? 'selected' : '';
+                    wSelect.innerHTML += `<option value="${wDoc.id}" ${sel}>${data.full_name} (${data.email})</option>`;
+                });
+                
+                // Attach event listeners
+                document.getElementById('assign-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const wid = document.getElementById('worker_id').value;
+                    const btn = e.target.querySelector('button');
+                    btn.disabled = true;
+                    btn.textContent = "Assigning...";
+                    try {
+                        await updateDoc(doc(db, 'reports', reportId), {
+                            assigned_worker_id: wid,
+                            status: 'Assigned' // auto-update status to Assigned
+                        });
+                        window.location.reload();
+                    } catch(err) {
+                        console.error(err);
+                        alert("Error assigning worker.");
+                        btn.disabled = false;
+                        btn.textContent = "Assign Worker";
+                    }
+                });
+                
+                document.getElementById('status-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const newStatus = document.getElementById('status').value;
+                    const comment = document.getElementById('comment').value.trim();
+                    const btn = e.target.querySelector('button');
+                    btn.disabled = true;
+                    btn.textContent = "Saving...";
+                    
+                    try {
+                        // Get current user details for note
+                        const currentUser = auth.currentUser;
+                        let myName = "Admin";
+                        if (currentUser) {
+                            const myDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                            if (myDoc.exists()) myName = myDoc.data().full_name;
+                        }
+                        
+                        const updateData = { status: newStatus };
+                        if (comment || newStatus !== currentReport.status) {
+                            updateData.notes = arrayUnion({
+                                text: comment,
+                                new_status: newStatus,
+                                author_name: myName,
+                                author_role: 'admin',
+                                timestamp: new Date()
+                            });
+                        }
+                        
+                        await updateDoc(doc(db, 'reports', reportId), updateData);
+                        
+                        // If marked as Fixed, trigger the email notification
+                        if (newStatus === 'Fixed') {
+                            try {
+                                await fetch('/api/sendFixedEmail', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ reportId })
+                                });
+                            } catch (emailErr) {
+                                console.error("Failed to send fixed email:", emailErr);
+                            }
+                        }
+                        window.location.reload();
+                    } catch(err) {
+                        console.error(err);
+                        alert("Error saving update.");
+                        btn.disabled = false;
+                        btn.textContent = "Save Update";
+                    }
+                });
+
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = `<div style="text-align: center; padding: 3rem; color: red;">Error loading report: ${error.message}</div>`;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadReport);
+    </script>
+</body>
+</html>

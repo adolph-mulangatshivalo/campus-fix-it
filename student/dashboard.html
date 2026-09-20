@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Fix-It</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+</head>
+<body class="theme-student">
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+            Campus Fix-It
+        </a>
+        <div class="navbar-links" id="nav-links"></div>
+    </nav>
+
+    <!-- Flash Messages container -->
+    <div class="flash-messages" id="flash-messages"></div>
+                
+            
+        
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="container">
+        
+<div class="responsive-header">
+    <h2>Student Dashboard</h2>
+        <a href="/student/submit_report.html" class="btn btn-blue" style="padding: 0.6rem 1.2rem; font-size: 0.95rem;">Submit New Report</a>
+</div>
+
+<div class="dashboard-stats">
+    <div class="stat-card" style="background: #FFF; border: var(--border-width) solid var(--border-color); padding: 1.5rem; box-shadow: var(--neo-shadow);">
+        <h3 style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 1rem;">Total Reports</h3>
+        <div style="font-size: 2.5rem; font-weight: 800;" id="total-reports"><div class="skeleton skeleton-text" style="height: 2.5rem; width: 60px; margin: 0 auto;"></div></div>
+    </div>
+    
+    <div class="stat-card" style="background: #FEF08A; border: var(--border-width) solid var(--border-color); padding: 1.5rem; box-shadow: var(--neo-shadow);">
+        <h3 style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 1rem;">In Progress</h3>
+        <div style="font-size: 2.5rem; font-weight: 800;" id="in-progress"><div class="skeleton skeleton-text" style="height: 2.5rem; width: 60px; margin: 0 auto;"></div></div>
+    </div>
+    
+    <div class="stat-card" style="background: #BBF7D0; border: var(--border-width) solid var(--border-color); padding: 1.5rem; box-shadow: var(--neo-shadow);">
+        <h3 style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 1rem;">Fixed</h3>
+        <div style="font-size: 2.5rem; font-weight: 800;" id="fixed"><div class="skeleton skeleton-text" style="height: 2.5rem; width: 60px; margin: 0 auto;"></div></div>
+    </div>
+    
+    <div class="stat-card" style="background: #FECACA; border: var(--border-width) solid var(--border-color); padding: 1.5rem; box-shadow: var(--neo-shadow);">
+        <h3 style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 1rem;">Rejected</h3>
+        <div style="font-size: 2.5rem; font-weight: 800;" id="rejected"><div class="skeleton skeleton-text" style="height: 2.5rem; width: 60px; margin: 0 auto;"></div></div>
+    </div>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="reports-table-body">
+            <tr>
+                <td><div class="skeleton skeleton-text" style="width: 80%;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 60%;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 50%;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 40%;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 60%;"></div></td>
+            </tr>
+            <tr>
+                <td><div class="skeleton skeleton-text" style="width: 70%;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 50%;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 40%;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 30%;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 50%;"></div></td>
+            </tr>
+            <tr>
+                <td><div class="skeleton skeleton-text" style="width: 90%;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 70%;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 60%;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 50%;"></div></td>
+                <td><div class="skeleton skeleton-text" style="width: 70%;"></div></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+    </main>
+
+    <!-- Firebase Serverless Scripts -->
+    <script type="module" src="/static/js/firebase-config.js"></script>
+    <script type="module" src="/static/js/main.js"></script>
+    <script type="module">
+        import { auth, db } from '/static/js/firebase-config.js';
+        import { collection, query, where, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        let unsubscribeReports = null;
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const q = query(collection(db, "reports"), where("student_id", "==", user.uid));
+                
+                try {
+                    unsubscribeReports = onSnapshot(q, (querySnapshot) => {
+                        const tbody = document.getElementById('reports-table-body');
+                        
+                        let total = 0;
+                        let inProgress = 0;
+                        let fixed = 0;
+                        let rejected = 0;
+                        
+                        const reports = [];
+                        querySnapshot.forEach((doc) => {
+                            reports.push({ id: doc.id, ...doc.data() });
+                            total++;
+                            const status = doc.data().status || '';
+                            if (status === 'In Progress' || status === 'Assigned' || status === 'Under Review') inProgress++;
+                            if (status === 'Fixed') fixed++;
+                            if (status === 'Rejected') rejected++;
+                        });
+                        
+                        // Sort descending by created_at
+                        reports.sort((a, b) => {
+                            const timeA = a.created_at ? a.created_at.toMillis() : 0;
+                            const timeB = b.created_at ? b.created_at.toMillis() : 0;
+                            return timeB - timeA;
+                        });
+                        
+                        document.getElementById('total-reports').textContent = total;
+                        document.getElementById('in-progress').textContent = inProgress;
+                        document.getElementById('fixed').textContent = fixed;
+                        document.getElementById('rejected').textContent = rejected;
+                        
+                        if (reports.length === 0) {
+                            tbody.innerHTML = `
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                                    You haven't submitted any reports yet. Click "Submit New Report" to get started.
+                                </td>
+                            </tr>`;
+                            return;
+                        }
+                        
+                        tbody.innerHTML = '';
+                        reports.forEach(report => {
+                            const dateObj = report.created_at ? report.created_at.toDate() : new Date();
+                            const dateStr = dateObj.toLocaleDateString();
+                            
+                            const st = report.status || 'Submitted';
+                            const badgeClass = st.toLowerCase().replace(' ', '-');
+                            
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td data-label="Title">${report.title}</td>
+                                <td data-label="Category">${report.category}</td>
+                                <td data-label="Date">${dateStr}</td>
+                                <td data-label="Status">
+                                    <span class="badge badge-${badgeClass}">${st}</span>
+                                </td>
+                                <td data-label="Action">
+                                    <a href="/student/view_report.html?id=${report.id}" class="action-btn btn-blue">View</a>
+                                    <button type="button" class="action-btn btn-red del-report-btn" data-id="${report.id}" style="margin-left: 0.5rem;">Delete</button>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                        
+                        // attach delete listeners
+                        document.querySelectorAll('.del-report-btn').forEach(btn => {
+                            btn.addEventListener('click', async (e) => {
+                                if(confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+                                    const id = e.target.getAttribute('data-id');
+                                    const flash = document.getElementById('flash-messages');
+                                    e.target.disabled = true;
+                                    e.target.textContent = '...';
+                                    try {
+                                        await deleteDoc(doc(db, 'reports', id));
+                                    } catch (err) {
+                                        console.error(err);
+                                        flash.innerHTML = `<div class="flash-message flash-danger">${err.message.replace(/Firebase:\s*/, '').replace(/\s*\(.*?\)\.?/, '')}</div>`;
+                                        e.target.disabled = false;
+                                        e.target.textContent = 'Delete';
+                                    }
+                                }
+                            });
+                        });
+                        
+                    }, (error) => {
+                        console.error("Error fetching reports: ", error);
+                        document.getElementById('reports-table-body').innerHTML = `
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: red; padding: 3rem;">
+                                    Error loading reports: ${error.message}
+                                </td>
+                            </tr>`;
+                    });
+                } catch(error) {
+                    console.error("Error setting up listener: ", error);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

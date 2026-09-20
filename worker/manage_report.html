@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Fix-It</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+</head>
+<body class="theme-worker">
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+            Campus Fix-It
+        </a>
+        <div class="navbar-links" id="nav-links"></div>
+    </nav>
+
+    <!-- Flash Messages container -->
+    <div class="flash-messages" id="flash-messages"></div>
+                
+            
+        
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="container">
+        
+<div style="margin-bottom: 1.5rem;">
+    <a href="/worker/dashboard.html" style="color: var(--text-muted); text-decoration: none;">&larr; Back to Dashboard</a>
+</div>
+
+<div class="table-container" style="padding: 2rem;" id="report-container">
+    <div class="responsive-header" style="align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+            <div class="skeleton skeleton-text" style="height: 2.5rem; width: 300px; margin-bottom: 0.5rem;"></div>
+            <div class="skeleton skeleton-text" style="height: 1rem; width: 150px;"></div>
+        </div>
+        <div>
+            <div class="skeleton skeleton-text" style="height: 2rem; width: 120px; border-radius: 20px;"></div>
+        </div>
+    </div>
+    
+    <div class="responsive-split-grid" style="margin-top: 2rem;">
+        <div>
+            <h4 style="margin-bottom: 0.5rem; text-transform: uppercase; border-bottom: 3px solid #000; padding-bottom: 0.5rem;">Location & Instructions</h4>
+            <div class="skeleton" style="height: 150px; border: var(--border-width) solid var(--border-color); margin-bottom: 2rem; box-shadow: var(--neo-shadow);"></div>
+            <div class="skeleton skeleton-img"></div>
+        </div>
+        
+        <div>
+            <div class="skeleton" style="height: 200px; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow); margin-bottom: 2rem;"></div>
+            <div class="skeleton" style="height: 150px; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow);"></div>
+        </div>
+    </div>
+</div>
+
+    </main>
+
+    <!-- Firebase Serverless Scripts -->
+    <script type="module" src="/static/js/firebase-config.js"></script>
+    <script type="module" src="/static/js/main.js"></script>
+    <script type="module">
+        import { auth, db } from '/static/js/firebase-config.js';
+        import { doc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        let reportId = new URLSearchParams(window.location.search).get('id');
+        let currentReport = null;
+        
+        async function loadReport() {
+            const container = document.getElementById('report-container');
+            if (!reportId) {
+                container.innerHTML = `<div style="text-align: center; padding: 3rem; color: red;">No report ID provided.</div>`;
+                return;
+            }
+            
+            try {
+                const docSnap = await getDoc(doc(db, 'reports', reportId));
+                if (!docSnap.exists()) {
+                    container.innerHTML = `<div style="text-align: center; padding: 3rem; color: red;">Report not found.</div>`;
+                    return;
+                }
+                
+                currentReport = docSnap.data();
+                
+                // Only allow access if they are assigned or are admin (though main.js handles role check, let's just render it)
+                
+                const st = currentReport.status || 'Submitted';
+                const badgeClass = st.toLowerCase().replace(' ', '-');
+                
+                // Fetch student details
+                let studentInfo = "Unknown Reporter";
+                if (currentReport.student_id) {
+                    const stuSnap = await getDoc(doc(db, 'users', currentReport.student_id));
+                    if (stuSnap.exists()) {
+                        const sData = stuSnap.data();
+                        studentInfo = `
+                            <p><strong>Name:</strong> ${sData.full_name}</p>
+                            <p><strong>Contact:</strong> <a href="mailto:${sData.email}">${sData.email}</a></p>
+                        `;
+                    }
+                }
+                
+                let imageHtml = '';
+                if (currentReport.image_url) {
+                    imageHtml = `
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Attached Image</h4>
+                        <img src="${currentReport.image_url}" alt="Issue Photo" style="max-width: 100%; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow); margin-top: 1rem;">
+                    </div>`;
+                }
+                
+                let actionsHtml = '';
+                if (st === 'Fixed') {
+                    actionsHtml = `
+                    <div style="background: #BBF7D0; padding: 1rem; text-align: center; font-weight: bold; border: 2px solid #000;">
+                        This task has been resolved.
+                    </div>`;
+                } else if (st === 'Assigned' || st === 'Submitted' || st === 'Under Review') {
+                    actionsHtml = `
+                    <p style="margin-bottom: 1rem; font-size: 0.9rem;">When you arrive at the location and begin work, update the status to In Progress.</p>
+                    <button class="btn btn-yellow update-status-btn" data-status="In Progress" style="width: 100%; margin-bottom: 1rem;">Mark as In Progress</button>
+                    `;
+                } else if (st === 'In Progress') {
+                    actionsHtml = `
+                    <p style="margin-bottom: 1rem; font-size: 0.9rem;">Once the issue is fully fixed, you can resolve the task.</p>
+                    <div class="form-group">
+                        <label for="comment" class="form-label">Resolution Details (Optional)</label>
+                        <textarea id="comment" name="comment" class="form-control" rows="3" placeholder="What was fixed?"></textarea>
+                    </div>
+                    <button class="btn btn-green update-status-btn" data-status="Fixed" style="width: 100%;">Mark as Fixed</button>
+                    `;
+                } else {
+                    actionsHtml = `
+                    <div style="background: #E5E7EB; padding: 1rem; text-align: center; font-weight: bold; border: 2px solid #000;">
+                        Status is currently ${st}.
+                    </div>`;
+                }
+
+                container.innerHTML = `
+                    <div class="responsive-header" style="align-items: flex-start; margin-bottom: 1rem;">
+                        <div>
+                            <h2 style="margin-bottom: 0.5rem;">Task: ${currentReport.title}</h2>
+                            <div style="color: var(--text-muted); font-size: 0.9rem;">
+                                Category: <strong>${currentReport.category}</strong>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="badge badge-${badgeClass}" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                                Current Status: ${st}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="responsive-split-grid" style="margin-top: 2rem;">
+                        <div>
+                            <h4 style="margin-bottom: 0.5rem; text-transform: uppercase; border-bottom: 3px solid #000; padding-bottom: 0.5rem;">Location & Instructions</h4>
+                            <p style="background: #FFF; border: var(--border-width) solid var(--border-color); padding: 1.5rem; margin-bottom: 2rem; box-shadow: var(--neo-shadow); font-weight: 500;">
+                                <strong>Location:</strong> ${currentReport.location}<br><br>
+                                <strong>Description:</strong> ${currentReport.description}
+                            </p>
+                            
+                            ${imageHtml}
+                        </div>
+                        
+                        <div>
+                            <div style="background: #FFF; padding: 1.5rem; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow); margin-bottom: 2rem;">
+                                <h4 style="margin-bottom: 1rem; text-transform: uppercase; border-bottom: 3px solid #000; padding-bottom: 0.5rem;">Update Task</h4>
+                                <div id="actions-container">
+                                    ${actionsHtml}
+                                </div>
+                            </div>
+                            
+                            <div style="background: #FFF; padding: 1.5rem; border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow);">
+                                <h4 style="margin-bottom: 1rem; text-transform: uppercase; border-bottom: 3px solid #000; padding-bottom: 0.5rem;">Reporter Information</h4>
+                                <div style="font-size: 0.9rem;">
+                                    ${studentInfo}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Attach Event Listeners
+                document.querySelectorAll('.update-status-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const newStatus = e.target.getAttribute('data-status');
+                        const commentEl = document.getElementById('comment');
+                        const comment = commentEl ? commentEl.value.trim() : '';
+                        
+                        btn.disabled = true;
+                        btn.textContent = "Updating...";
+                        
+                        try {
+                            const currentUser = auth.currentUser;
+                            let myName = "Worker";
+                            if (currentUser) {
+                                const myDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                                if (myDoc.exists()) myName = myDoc.data().full_name;
+                            }
+                            
+                            const updateData = { status: newStatus };
+                            if (comment || newStatus !== currentReport.status) {
+                                updateData.notes = arrayUnion({
+                                    text: comment,
+                                    new_status: newStatus,
+                                    author_name: myName,
+                                    author_role: 'worker',
+                                    timestamp: new Date()
+                                });
+                            }
+                            
+                            await updateDoc(doc(db, 'reports', reportId), updateData);
+                            
+                            // If marked as Fixed, trigger the email notification
+                            if (newStatus === 'Fixed') {
+                                try {
+                                    await fetch('/api/sendFixedEmail', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ reportId })
+                                    });
+                                } catch (emailErr) {
+                                    console.error("Failed to send fixed email:", emailErr);
+                                }
+                            }
+                            
+                            window.location.reload();
+                        } catch(err) {
+                            console.error(err);
+                            alert("Error updating task.");
+                            btn.disabled = false;
+                            btn.textContent = "Try Again";
+                        }
+                    });
+                });
+
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = `<div style="text-align: center; padding: 3rem; color: red;">Error loading report: ${error.message}</div>`;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadReport);
+    </script>
+</body>
+</html>

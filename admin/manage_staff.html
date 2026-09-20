@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Fix-It</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/style.css?v=3">
+</head>
+<body class="theme-admin">
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+            Campus Fix-It
+        </a>
+        <div class="navbar-links" id="nav-links"></div>
+    </nav>
+
+    <!-- Flash Messages container -->
+    <div class="flash-messages" id="flash-messages"></div>
+                
+            
+        
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="container">
+        
+<div class="responsive-header">
+    <div>
+        <h2>Manage Staff</h2>
+        <p style="color: var(--text-muted);">Add or remove Admins and Maintenance Workers</p>
+    </div>
+    <div>
+        <a href="/admin/dashboard.html" class="btn btn-dark" style="padding: 0.6rem 1.2rem; font-size: 0.95rem;">&larr; Back to Dashboard</a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 320px 1fr; gap: 2rem;" class="manage-staff-grid">
+    
+    <!-- Add New Staff Form -->
+    <div style="background: var(--surface); border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow); padding: 1.5rem; height: fit-content;">
+        <h3 style="margin-bottom: 1.5rem; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 0.5rem; font-size: 1.1rem;">Add New Staff</h3>
+        
+        <form id="add-staff-form">
+            <div class="form-group">
+                <label for="role" class="form-label">Role</label>
+                <select id="role" name="role" class="form-control" onchange="updatePlaceholder()" required>
+                    <option value="worker">Worker</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="full_name" class="form-label">Full Name</label>
+                <input type="text" id="full_name" name="full_name" class="form-control" placeholder="Enter full name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="staff_id" class="form-label" id="staff_id_label">Worker ID</label>
+                <input type="text" id="staff_id" name="staff_id" class="form-control" placeholder="e.g. WOR111" required oninput="this.value = this.value.toUpperCase();">
+            </div>
+            
+            <div class="form-group">
+                <label for="email" class="form-label">Personal Email (Optional)</label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="For password resets">
+            </div>
+            
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <div style="position: relative;">
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Initial password" required style="padding-right: 3.5rem;">
+                    <button type="button" onclick="const x = document.getElementById('password'); const isPass = x.type === 'password'; x.type = isPass ? 'text' : 'password'; this.querySelector('.eye-open').style.display = isPass ? 'none' : 'block'; this.querySelector('.eye-closed').style.display = isPass ? 'block' : 'none';" style="position: absolute; right: 0; top: 0; height: 100%; width: 3.5rem; background: #E5E7EB; border: none; border-left: var(--border-width) solid var(--border-color); cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none; transition: background 0.15s ease;" onmouseover="this.style.background='#D1D5DB'" onmouseout="this.style.background='#E5E7EB'">
+                        <svg class="eye-open" style="display: block;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14c0-6 4-9 8-9s8 3 8 9"></path><circle cx="12" cy="14" r="3"></circle></svg>
+                        <svg class="eye-closed" style="display: none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14c0-6 4-9 8-9s8 3 8 9"></path><circle cx="12" cy="14" r="3"></circle><line x1="3" y1="3" x2="21" y2="21"></line></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-blue" style="width: 100%;" id="add-staff-btn">Create Staff Member</button>
+        </form>
+    </div>
+
+    <!-- Staff List -->
+    <div class="table-container" style="background: var(--surface); border: var(--border-width) solid var(--border-color); box-shadow: var(--neo-shadow); padding: 0; height: fit-content;">
+        <div style="padding: 1.5rem; border-bottom: 2px solid var(--border-color); background: #F9FAFB;">
+            <h3 style="margin: 0; text-transform: uppercase;">Current Staff</h3>
+        </div>
+        
+        <table class="table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="staff-table-body">
+                <tr>
+                <td data-label="Name"><div class="skeleton skeleton-text" style="width: 120px;"></div></td>
+                <td data-label="Role"><div class="skeleton skeleton-text" style="width: 80px; height: 1.5rem; border-radius: 20px;"></div></td>
+                <td data-label="Email"><div class="skeleton skeleton-text" style="width: 180px;"></div></td>
+                <td data-label="Actions"><div class="skeleton skeleton-text" style="width: 140px; height: 2.2rem;"></div></td>
+            </tr>
+            <tr>
+                <td data-label="Name"><div class="skeleton skeleton-text" style="width: 150px;"></div></td>
+                <td data-label="Role"><div class="skeleton skeleton-text" style="width: 80px; height: 1.5rem; border-radius: 20px;"></div></td>
+                <td data-label="Email"><div class="skeleton skeleton-text" style="width: 160px;"></div></td>
+                <td data-label="Actions"><div class="skeleton skeleton-text" style="width: 140px; height: 2.2rem;"></div></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Edit Staff Modal -->
+<div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000;">
+    <div style="background: var(--surface); padding: 2rem; border-radius: 8px; width: 400px; max-width: 90%; box-shadow: var(--neo-shadow); border: 2px solid #000;">
+        <div class="responsive-header" style="border-bottom: 2px solid #000; padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0; text-transform: uppercase;">Edit Staff Member</h3>
+            <button type="button" onclick="closeEditModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; font-weight: bold;">&times;</button>
+        </div>
+        
+        <form id="edit-staff-form">
+            <input type="hidden" name="user_id" id="edit_user_id">
+            
+            <div class="form-group">
+                <label for="edit_role" class="form-label">Role</label>
+                <select id="edit_role" name="role" class="form-control" required>
+                    <option value="worker">Worker</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="edit_full_name" class="form-label">Full Name</label>
+                <input type="text" id="edit_full_name" name="full_name" class="form-control" required>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-green" id="edit-staff-btn" style="width: 100%;">Save Changes</button>
+                <button type="button" class="btn btn-blue" onclick="adminChangePassword()" style="width: 100%;">Change Password</button>
+                <button type="button" class="btn btn-gray" onclick="closeEditModal()" style="width: 100%;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openEditModal(id, name, role) {
+        document.getElementById('edit_user_id').value = id;
+        document.getElementById('edit_full_name').value = name;
+        document.getElementById('edit_role').value = role;
+        document.getElementById('editModal').style.display = 'flex';
+    }
+    
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    function updatePlaceholder() {
+        const role = document.getElementById('role').value;
+        const idLabel = document.getElementById('staff_id_label');
+        const idInput = document.getElementById('staff_id');
+        
+        if (role === 'admin') {
+            idLabel.textContent = 'Admin ID';
+            idInput.placeholder = 'e.g. ADM111';
+        } else {
+            idLabel.textContent = 'Worker ID';
+            idInput.placeholder = 'e.g. WOR111';
+        }
+    }
+    
+    async function adminChangePassword() {
+        const uid = document.getElementById('edit_user_id').value;
+        if (!uid) return;
+        
+        const newPassword = prompt("Enter new password for this staff member (minimum 6 characters):");
+        if (!newPassword) return;
+        if (newPassword.length < 6) {
+            alert("Password must be at least 6 characters.");
+            return;
+        }
+        
+        if (!confirm("Are you sure you want to force change this user's password?")) return;
+        
+        try {
+            const response = await fetch('/api/adminChangePassword', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: uid, newPassword: newPassword })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert("Password changed successfully!");
+            } else {
+                alert("Failed to change password: " + data.error);
+            }
+        } catch(e) {
+            console.error(e);
+            alert("An error occurred.");
+        }
+    }
+    
+    window.openEditModal = openEditModal;
+    window.closeEditModal = closeEditModal;
+</script>
+
+    </main>
+
+    <!-- Firebase Serverless Scripts -->
+    <script type="module" src="/static/js/firebase-config.js"></script>
+    <script type="module" src="/static/js/main.js"></script>
+    <script type="module">
+        import { app, auth, db } from '/static/js/firebase-config.js';
+        import { collection, query, where, getDocs, doc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        // We import initializeApp and getAuth to create a secondary app instance for creating users
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                if (user.email !== 'sadm111@admin.campus-fix-it.com') {
+                    alert("Access Denied: Only the Super Admin can manage staff.");
+                    window.location.href = '/admin/dashboard.html';
+                }
+            }
+        });
+        
+        async function loadStaff() {
+            const tbody = document.getElementById('staff-table-body');
+            try {
+                // Fetch workers and admins
+                const wQuery = query(collection(db, 'users'), where('role', 'in', ['worker', 'admin', 'Worker', 'Admin', 'WORKER', 'ADMIN']));
+                const wSnap = await getDocs(wQuery);
+                
+                let html = '';
+                const currentUserUid = auth.currentUser ? auth.currentUser.uid : null;
+                
+                if (wSnap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">No staff found.</td></tr>';
+                    return;
+                }
+                
+                wSnap.forEach(d => {
+                    const data = d.data();
+                    const isMe = d.id === currentUserUid;
+                    const roleColor = data.role === 'admin' ? '#FCA5A5' : '#93C5FD'; // red for admin, blue for worker
+                    
+                    let actionHtml = '';
+                    if (isMe) {
+                        actionHtml = '<span style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">Current User</span>';
+                    } else {
+                        actionHtml = `
+                            <button type="button" class="action-btn btn-blue" style="margin-right: 0.5rem;" onclick="openEditModal('${d.id}', '${data.full_name}', '${data.role}')">Edit</button>
+                            <button type="button" class="action-btn btn-red del-btn" data-id="${d.id}">Delete</button>
+                        `;
+                    }
+                    
+                    let staffIdDisplay = data.staff_id;
+                    if (!staffIdDisplay && data.email && data.email.toLowerCase().includes('sadm111')) {
+                        staffIdDisplay = 'SADM111';
+                    }
+                    
+                    html += `
+                    <tr>
+                        <td data-label="ID"><strong>${staffIdDisplay || 'N/A'}</strong></td>
+                        <td data-label="Name">${data.full_name}</td>
+                        <td data-label="Email">${data.email}</td>
+                        <td data-label="Role">
+                            <span class="badge" style="background: ${roleColor};">
+                                ${data.role.toUpperCase()}
+                            </span>
+                        </td>
+                        <td data-label="Action">
+                            ${actionHtml}
+                        </td>
+                    </tr>`;
+                });
+                
+                tbody.innerHTML = html;
+                
+                // attach delete listeners
+                document.querySelectorAll('.del-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        if(confirm('Are you sure you want to revoke this user\'s access by deleting their profile?')) {
+                            const id = e.target.getAttribute('data-id');
+                            await deleteDoc(doc(db, 'users', id));
+                            loadStaff();
+                        }
+                    });
+                });
+                
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem; color: red;">Error: ${err.message}</td></tr>`;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStaff();
+            
+            // Add Staff
+            document.getElementById('add-staff-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('add-staff-btn');
+                const flash = document.getElementById('flash-messages');
+                
+                const role = document.getElementById('role').value;
+                const full_name = document.getElementById('full_name').value.trim();
+                const staff_id = document.getElementById('staff_id').value.trim().toUpperCase();
+                let email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                
+                if (!email) {
+                    email = `${staff_id.toLowerCase()}@no-email.campusfixit.com`;
+                }
+                
+                btn.disabled = true;
+                btn.textContent = "Creating...";
+                
+                try {
+                    // Use a secondary app to create the user without logging out the admin
+                    const secondaryApp = initializeApp(app.options, "Secondary");
+                    const secondaryAuth = getAuth(secondaryApp);
+                    
+                    const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+                    const newUid = userCredential.user.uid;
+                    
+                    await secondaryAuth.signOut(); // sign out the secondary app
+                    
+                    // write to firestore
+                    await setDoc(doc(db, 'users', newUid), {
+                        full_name: full_name,
+                        email: email,
+                        role: role,
+                        staff_id: staff_id,
+                        created_at: new Date()
+                    });
+                    
+                    document.getElementById('add-staff-form').reset();
+                    updatePlaceholder();
+                    loadStaff();
+                    flash.innerHTML = `<div class="flash-message flash-success">Staff member created successfully!</div>`;
+                } catch(error) {
+                    console.error(error);
+                    flash.innerHTML = `<div class="flash-message flash-danger">${error.message.replace(/Firebase:\s*/, '').replace(/\s*\(.*?\)\.?/, '')}</div>`;
+                }
+                
+                btn.disabled = false;
+                btn.textContent = "Create Staff Member";
+            });
+            
+            // Edit Staff
+            document.getElementById('edit-staff-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const uid = document.getElementById('edit_user_id').value;
+                const role = document.getElementById('edit_role').value;
+                const full_name = document.getElementById('edit_full_name').value;
+                
+                const btn = document.getElementById('edit-staff-btn');
+                btn.disabled = true;
+                btn.textContent = "Saving...";
+                
+                try {
+                    await updateDoc(doc(db, 'users', uid), {
+                        role: role,
+                        full_name: full_name
+                    });
+                    closeEditModal();
+                    loadStaff();
+                } catch (error) {
+                    console.error(error);
+                    alert("Error updating staff: " + error.message);
+                }
+                
+                btn.disabled = false;
+                btn.textContent = "Save Changes";
+            });
+        });
+    </script>
+</body>
+</html>

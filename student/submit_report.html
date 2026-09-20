@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Fix-It</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/style.css?v=2">
+</head>
+<body class="theme-student">
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+            Campus Fix-It
+        </a>
+        <div class="navbar-links" id="nav-links"></div>
+    </nav>
+
+    <!-- Flash Messages container -->
+    <div class="flash-messages" id="flash-messages"></div>
+                
+            
+        
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="container">
+        
+<div class="auth-container" style="max-width: 600px;">
+    <h2 class="auth-title">Submit Maintenance Report</h2>
+    
+    <form method="POST" action="" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="title" class="form-label">Issue Title</label>
+            <input type="text" id="title" name="title" class="form-control" placeholder="e.g. Broken sink in bathroom" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="category_id" class="form-label">Category</label>
+            <select id="category_id" name="category_id" class="form-control" required>
+                <option value="" disabled selected>Select a category</option>
+                <option value="Plumbing">Plumbing</option>
+                <option value="Electrical">Electrical</option>
+                <option value="IT">IT</option>
+                <option value="Cleaning">Cleaning</option>
+                <option value="Structural">Structural</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="location" class="form-label">Location</label>
+            <input type="text" id="location" name="location" class="form-control" placeholder="e.g. Building A, 2nd Floor Men's Restroom" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="description" class="form-label">Description</label>
+            <textarea id="description" name="description" class="form-control" rows="4" placeholder="Provide details about the issue..." required></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="image" class="form-label">Upload Photo (Optional)</label>
+            <input type="file" id="image" name="image" class="form-control" accept="image/*">
+            <small style="color: var(--text-muted);">Supported formats: JPG, PNG, GIF</small>
+        </div>
+        
+        <button type="submit" class="btn btn-blue" id="submit-btn" style="width: 100%;">Submit Report</button>
+    </form>
+</div>
+
+    </main>
+
+    <!-- Firebase Serverless Scripts -->
+    <script type="module" src="/static/js/firebase-config.js"></script>
+    <script type="module" src="/static/js/main.js"></script>
+    <script type="module">
+        import { auth, db } from '/static/js/firebase-config.js';
+        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        // --- Helper Function: Compress Image to WebP ---
+        async function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        
+                        // Max dimensions
+                        const MAX_WIDTH = 1200;
+                        const MAX_HEIGHT = 1200;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Compress to WebP at 70% quality
+                        const dataUrl = canvas.toDataURL('image/webp', 0.7);
+                        // Extract base64 part
+                        const base64Data = dataUrl.split(',')[1];
+                        resolve(base64Data);
+                    };
+                    img.onerror = (error) => reject(error);
+                };
+                reader.onerror = (error) => reject(error);
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.querySelector('form');
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const btn = document.getElementById('submit-btn');
+                const title = document.getElementById('title').value.trim();
+                const category = document.getElementById('category_id').value;
+                const location = document.getElementById('location').value.trim();
+                const description = document.getElementById('description').value.trim();
+                const imageFile = document.getElementById('image').files[0];
+                const flash = document.getElementById('flash-messages');
+                
+                const user = auth.currentUser;
+                if (!user) {
+                    flash.innerHTML = `<div class="flash-message flash-danger">You must be logged in to submit a report.</div>`;
+                    return;
+                }
+                
+                btn.disabled = true;
+                btn.textContent = 'Submitting...';
+                
+                try {
+                    let imageUrl = null;
+                    if (imageFile) {
+                        btn.textContent = 'Compressing photo...';
+                        const base64Image = await compressImage(imageFile);
+                        
+                        btn.textContent = 'Uploading photo...';
+                        const uploadResponse = await fetch('/api/upload', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ image: base64Image })
+                        });
+                        
+                        const uploadData = await uploadResponse.json();
+                        if (uploadResponse.ok && uploadData.url) {
+                            imageUrl = uploadData.url;
+                        } else {
+                            throw new Error("Failed to upload image: " + (uploadData.error || 'Unknown error'));
+                        }
+                    }
+                    
+                    btn.textContent = 'Saving report...';
+                    const reportData = {
+                        title: title,
+                        category: category,
+                        location: location,
+                        description: description,
+                        status: 'Submitted',
+                        student_id: user.uid,
+                        assigned_worker_id: null,
+                        created_at: serverTimestamp(),
+                        image_url: imageUrl,
+                        notes: []
+                    };
+                    
+                    await addDoc(collection(db, 'reports'), reportData);
+                    window.location.href = '/student/dashboard.html';
+                } catch(error) {
+                    console.error(error);
+                    flash.innerHTML = `<div class="flash-message flash-danger">${error.message.replace(/Firebase:\s*/, '').replace(/\s*\(.*?\)\.?/, '')}</div>`;
+                    btn.disabled = false;
+                    btn.textContent = 'Submit Report';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
