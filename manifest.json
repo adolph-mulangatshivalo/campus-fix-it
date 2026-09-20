@@ -1,0 +1,17 @@
+{
+  "name": "Campus Fix-It",
+  "short_name": "Fix-It",
+  "description": "Campus maintenance and issue reporting platform",
+  "start_url": "/auth/login.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FFD500",
+  "icons": [
+    {
+      "src": "/static/img/logo.jpg",
+      "sizes": "192x192 512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
