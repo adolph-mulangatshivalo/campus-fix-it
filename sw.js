@@ -1,8 +1,7 @@
-const CACHE_NAME = 'campus-fixit-cache-v20';
+const CACHE_NAME = 'campus-fixit-cache-v21';
 
 const STATIC_ASSETS = [
     '/',
-    '/index.html',
     '/static/css/style.css',
     '/static/js/main.js',
     '/static/js/firebase-config.js',
