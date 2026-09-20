@@ -28,8 +28,8 @@ module.exports = async function handler(req, res) {
     const data = await response.json();
     
     if (data.success) {
-      // Return the display_url which is optimized by ImgBB for fast web loading
-      return res.status(200).json({ url: data.data.display_url });
+      // Use original URL since frontend WebP compression handles the file size perfectly now
+      return res.status(200).json({ url: data.data.url });
     } else {
       console.error("ImgBB API Error:", data.error);
       return res.status(500).json({ error: data.error.message || 'ImgBB upload failed' });
