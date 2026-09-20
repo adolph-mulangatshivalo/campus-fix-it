@@ -49,7 +49,19 @@ module.exports = async function handler(req, res) {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 2 * 60000); // 2 minutes from now
 
-    // 2. Save to Firestore securely via Admin SDK (bypasses security rules)
+    // 2. Clean up any existing OTPs for this email so they disappear
+    try {
+        const oldSnapshot = await db.collection("password_resets").where("email", "==", email).get();
+        if (!oldSnapshot.empty) {
+            const batch = db.batch();
+            oldSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+        }
+    } catch(e) {
+        console.error("Cleanup error:", e);
+    }
+
+    // 3. Save to Firestore securely via Admin SDK (bypasses security rules)
     await db.collection("password_resets").add({
         email: email,
         otp: otpCode,
