@@ -92,7 +92,7 @@ module.exports = async function handler(req, res) {
     if (!emailResponse.ok) {
       const text = await emailResponse.text();
       console.error("EmailJS Error:", text);
-      return res.status(500).json({ error: 'Failed to send email via EmailJS' });
+      return res.status(500).json({ error: `EmailJS Error: ${text}` });
     }
 
     return res.status(200).json({ success: true, message: 'OTP generated and sent securely.' });
