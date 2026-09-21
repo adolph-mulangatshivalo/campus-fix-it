@@ -302,11 +302,16 @@
                         // If marked as Fixed, trigger the email notification
                         if (newStatus === 'Fixed') {
                             try {
-                                await fetch('/api/sendFixedEmail', {
+                                const emailRes = await fetch('/api/sendFixedEmail', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ reportId })
                                 });
+                                if (!emailRes.ok) {
+                                    const errData = await emailRes.json();
+                                    console.error("Backend Email Error:", errData);
+                                    alert("Report updated, but failed to send email: " + (errData.error || "Check Vercel env vars."));
+                                }
                             } catch (emailErr) {
                                 console.error("Failed to send fixed email:", emailErr);
                             }
