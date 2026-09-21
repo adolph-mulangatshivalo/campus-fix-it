@@ -21,30 +21,6 @@ This project is built using a modern, serverless architecture:
 *   **Image Hosting:** ImgBB API for lightweight, external image storage.
 *   **Hosting:** Vercel.
 
-## ⚙️ Setup & Installation
-
-To run this project locally, you will need Node.js and the Vercel CLI installed.
-
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/adolph-mulangatshivalo/campus-fix-it.git
-    cd campus-fix-it
-    ```
-
-2.  **Install backend dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Environment Variables:**
-    Duplicate the `.env.example` file, rename it to `.env`, and fill in your private API keys and Firebase Service Account credentials.
-    > **Note:** Never commit the `.env` file to version control.
-
-4.  **Run the local development server:**
-    Since the app relies on Vercel Serverless Functions, use the Vercel CLI to run it locally:
-    ```bash
-    vercel dev
-    ```
 
 ## 🔒 Security Notes
 *   **Firestore Rules:** The database is locked down. Users can only read/write their own profiles and reports. Password reset tokens are completely blocked from frontend access and can only be managed by the secure Admin SDK in the Vercel backend.
