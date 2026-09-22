@@ -20,3 +20,4 @@ The following test cases were executed on the functional prototype of the **Camp
 
 ### Testing Summary
 The functional prototype was thoroughly tested across all three user roles (Student, Maintenance Worker, Administrator). The integration between the Vanilla JavaScript frontend, the Firebase NoSQL database, and the Vercel serverless backend proved to be highly robust. All core functional requirements were successfully met without critical failures.
+ 
