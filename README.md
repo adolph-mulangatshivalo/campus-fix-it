@@ -27,3 +27,4 @@ This project is built using a modern, serverless architecture:
 *   **Instant Redirects:** The app uses a `vercel.json` configuration for instant, server-side route protection and redirection.
 
 
+ 
