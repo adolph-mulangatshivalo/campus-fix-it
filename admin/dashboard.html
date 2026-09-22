@@ -161,7 +161,7 @@
     <script type="module" src="/static/js/main.js"></script>
     <script type="module">
         import { auth, db } from '/static/js/firebase-config.js';
-        import { collection, query, getDocs, doc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { collection, query, getDocs, doc, deleteDoc, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         
         onAuthStateChanged(auth, user => {
@@ -175,10 +175,11 @@
         
         let unsubscribeReports = null;
         
-        async function loadReports() {
+        function loadReports() {
             try {
                 const q = query(collection(db, "reports"));
-                const querySnapshot = await getDocs(q);
+                if (unsubscribeReports) unsubscribeReports();
+                unsubscribeReports = onSnapshot(q, (querySnapshot) => {
                     let total = 0;
                     let newRep = 0;
                     let inProgress = 0;
@@ -225,6 +226,7 @@
                     }
                     
                     renderTable(filtered);
+                });
             } catch(error) {
                 console.error("Error fetching reports: ", error);
                 document.getElementById('reports-table-body').innerHTML = `
